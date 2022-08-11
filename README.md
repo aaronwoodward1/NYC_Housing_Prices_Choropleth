@@ -13,3 +13,5 @@ The Process
 We use various techniques in cleansing and shaping the datasets, especially using tidygeocoder to geocode the addresses in the Rolling Property Sales datasets once the addresses have been cleaned. Once the addresses have been geocoded, we use the spatial coordinates (longitude and latitude) to assign the addresses to their respective neighborhood. These processes will shape our data to be ready for analysis and plotting the choropleth map.
 
 Without further adieu... Let's dig into the code!!!
+![7C80E8B4-1EE1-40F4-8CFC-6F318EB1B491_1_105_c](https://user-images.githubusercontent.com/45469389/184256696-102b6f7a-e8e5-43c7-917e-5a4530eadeca.jpeg)
+![AA4BAD50-1162-4320-BC21-D21B34EFEE00](https://user-images.githubusercontent.com/45469389/184256721-8dafdb3a-a953-4446-84f1-7e68d831e3cb.jpeg)
