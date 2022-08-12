@@ -1,394 +1,6 @@
-#Preliminary code
 
-library("tidyverse")
-library("dplyr")
-library("tidyr")
-library("ggplot2")
-library("rvest")
-library("janitor")
-library("xml2")
 
-manhattan_homesales_roll <- download.file(url = "https://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/neighborhood_sales/2021/2021_manhattan_sales_prices.xlsx", destfile = "~Desktop", mode="wb")
-
-head(manhattan_homesales_roll)
-
-
-####Data cleaning###
-
-temp = tempfile(fileext = ".xlsx")
-dataURL <- "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/neighborhood_sales/2021/2021_manhattan_sales_prices.xlsx"
-download.file(dataURL, destfile=temp, mode='wb')
-test <- readxl::read_excel(temp, sheet =1)
-head(test)
-
-manhattan_homesales_roll <- janitor::row_to_names(manhattan_homesales_roll, 6, remove_rows_above = TRUE) 
-head(manhattan_homesales_roll)
-
-manhattan_homesales_roll <- na.omit(manhattan_homesales_roll)
-head(manhattan_homesales_roll)
-
-########
-manhattan_homesales_roll <- read.csv("rollingsales_manhattan.csv")
-head(manhattan_homesales_roll)
-
-manhattan_homesales_roll <- janitor::row_to_names(manhattan_homesales_roll, 4, remove_rows_above = TRUE) 
-head(manhattan_homesales_roll)
-
-summary(manhattan_homesales_roll)
-
-#  as.Date('SALE DATE')
-
-#######
-#Need to install plot.ly and Socrata
-df <- read.socrata(
-  "https://data.cityofnewyork.us/resource/5ebm-myj7.json",
-  app_token = "SAVvPY9DDYV1TmGl9fqF4bvIR",
-  email     = "aaron.woodward1@gmail.com",
-  password  = "Hudson@27")
-
-
-devtools::install_github('rstudio/leaflet')
-devtools::install_github('bhaskarvk/leaflet.extras')
-
-
-library("tidyverse")
-library("dplyr")
-library("tidyr")
-library("ggplot2")
-library("rvest")
-library("janitor")
-library("xml2")
-library("plotly")
-library("RSocrata")
-library("hablar")
-library("reshape2")
-library("geojsonsf")
-library("sf")
-library("leaflet")
-library("sp")
-library("maps")
-library("rgdal")
-library("geojsonio")
-library("ggmap")
-library("knitr")
-library("osmdata")
-library("rmarkdown")
-library("testthat")
-library("tidygeocoder")
-library("nominatimlite")
-library("leaflet.extras")
-
-
-
-
- 
-head(df)
-
-df <- df %>% mutate_at(c('number_of_sales','lowest_sale_price','average_sale_price','median_sale_price',
-                   'highest_sale_price'), as.numeric)
-
-#EDA
-summary(df) 
-
-ggplot(data = melt(df), mapping = aes(x = value)) + 
-  geom_histogram(bins=10) + facet_wrap(~variable, scales = 'free_x')
-
-df_hoods <- read.socrata(
-  "https://data.cityofnewyork.us/resource/q2z5-ai38.json",
-  app_token = "SAVvPY9DDYV1TmGl9fqF4bvIR",
-  email     = "aaron.woodward1@gmail.com",
-  password  = "Hudson@27")
-
-
-
-#library(devtools)
-#install_github("edzer/sfr")
-
-options(timeout = 1200) 
-install.packages("sf")
-
-PackageNames <- c("knitr","osmdata","rmarkdown","testthat","tibble","tidygeocoder","nominatimlite")
-
-for(i in PackageNames){
-  if(!require(i, character.only = T)){
-    install.packages(i, dependencies = T)
-    require(i, character.only = T)
-  }
-}
-
-#https://data.cityofnewyork.us/resource/q2z5-ai38.json
-
-#NYC Neighborhood Polygons GeoJSON
-#https://data-beta-nyc-files.s3.amazonaws.com/resources/35dd04fb-81b3-479b-a074-a27a37888ce7/d085e2f8d0b54d4590b1e7d1f35594c1pediacitiesnycneighborhoods.geojson?Signature=ePFks%2FsnyrtML3XTKKAVZWI2g54%3D&Expires=1650765481&AWSAccessKeyId=AKIAWM5UKMRH2KITC3QA
-install.packages('geojsonR')
-library(geojsonR)
-
-nyc_hood_gjson_url_path <-"https://data-beta-nyc-files.s3.amazonaws.com/resources/35dd04fb-81b3-479b-a074-a27a37888ce7/d085e2f8d0b54d4590b1e7d1f35594c1pediacitiesnycneighborhoods.geojson?Signature=ePFks%2FsnyrtML3XTKKAVZWI2g54%3D&Expires=1650765481&AWSAccessKeyId=AKIAWM5UKMRH2KITC3QA"
-#nyc_hood_boundaries <-FROM_GeoJson(url_file_string = nyc_hood_gjson_url_path)
-nyc_hoods <- geojsonio::geojson_read("https://data-beta-nyc-files.s3.amazonaws.com/resources/35dd04fb-81b3-479b-a074-a27a37888ce7/d085e2f8d0b54d4590b1e7d1f35594c1pediacitiesnycneighborhoods.geojson?Signature=ePFks%2FsnyrtML3XTKKAVZWI2g54%3D&Expires=1650765481&AWSAccessKeyId=AKIAWM5UKMRH2KITC3QA", what = "sp")
-nyc_hoods <- readOGR("https://data-beta-nyc-files.s3.amazonaws.com/resources/35dd04fb-81b3-479b-a074-a27a37888ce7/d085e2f8d0b54d4590b1e7d1f35594c1pediacitiesnycneighborhoods.geojson?Signature=ePFks%2FsnyrtML3XTKKAVZWI2g54%3D&Expires=1650765481&AWSAccessKeyId=AKIAWM5UKMRH2KITC3QA") 
-
-#url <- "https://rstudio.github.io/leaflet/json/nycounties.geojson"
-#nycounties <- geojson_read(url, parse = TRUE, what = "sp")
-#nycounties <- geojson_read(url)
-
-nycounties <- readOGR("https://rstudio.github.io/leaflet/json/nycounties.geojson") 
-pal <- colorNumeric("viridis", NULL)
-
-leaflet(nycounties) %>%
-  addTiles() %>%
-  addPolygons(stroke = FALSE, smoothFactor = 0.3, fillOpacity = 1,
-              fillColor = ~pal(log10(pop)),
-              label = ~paste0(county, ": ", formatC(pop, big.mark = ","))) %>%
-  addLegend(pal = pal, values = ~log10(pop), opacity = 1.0,
-            labFormat = labelFormat(transform = function(x) round(10^x)))
-
-########
-
-
-
-
-#Reading in the .csv files for each borough
-roll_sales_manhattan <- read.csv("rollingsales_manhattan.csv")
-roll_sales_bronx <- read.csv("rollingsales_bronx.csv")
-roll_sales_brooklyn <- read.csv("rollingsales_brooklyn.csv")
-roll_sales_queens <- read.csv("rollingsales_queens.csv")
-roll_sales_statenisland <- read.csv("rollingsales_statenisland.csv")
-
-
-manhattan_df <- row_to_names(roll_sales_manhattan, 4, remove_rows_above = TRUE) 
-bronx_df <- row_to_names(roll_sales_bronx, 4, remove_rows_above = TRUE) 
-brooklyn_df <- row_to_names(roll_sales_brooklyn, 4, remove_rows_above = TRUE) 
-queens_df <- row_to_names(roll_sales_queens, 4, remove_rows_above = TRUE) 
-statenisland_df <- row_to_names(roll_sales_statenisland, 4, remove_rows_above = TRUE) 
-
-df_list <- list(manhattan_df,bronx_df,brooklyn_df,queens_df,statenisland_df)
-nyc_homesales_df <- rbind(manhattan_df,bronx_df,brooklyn_df,queens_df,statenisland_df)
-tail(nyc_homesales_df)
-
-nyc_homesales_df$BOROUGH[nyc_homesales_df$BOROUGH=="1"] <- "MANHATTAN"
-nyc_homesales_df$BOROUGH[nyc_homesales_df$BOROUGH=="2"] <- "BRONX"
-nyc_homesales_df$BOROUGH[nyc_homesales_df$BOROUGH=="3"] <- "BROOKLYN"
-nyc_homesales_df$BOROUGH[nyc_homesales_df$BOROUGH=="4"] <- "QUEENS"
-nyc_homesales_df$BOROUGH[nyc_homesales_df$BOROUGH=="5"] <- "STATEN ISLAND"
-
-
-
-
-
-#manhattan_df <- row_to_names(roll_sales_manhattan, 4, remove_rows_above = TRUE) 
-
-nyc_homesales_df$`SALE PRICE` <- as.numeric(gsub(",", "", nyc_homesales_df$`SALE PRICE`))
-nyc_homesales_df$`RESIDENTIAL UNITS` <- as.numeric(gsub(",", "", nyc_homesales_df$`RESIDENTIAL UNITS`))
-nyc_homesales_df$`COMMERCIAL UNITS` <- as.numeric(gsub(",", "", nyc_homesales_df$`COMMERCIAL UNITS`))
-nyc_homesales_df$`TOTAL UNITS` <- as.numeric(gsub(",", "", nyc_homesales_df$`TOTAL UNITS`))
-nyc_homesales_df$`LAND SQUARE FEET` <- as.numeric(gsub(",", "", nyc_homesales_df$`LAND SQUARE FEET`))
-nyc_homesales_df$`GROSS SQUARE FEET` <- as.numeric(gsub(",", "", nyc_homesales_df$`GROSS SQUARE FEET`))
-
-######Data Cleaning
-#Removing Sale Price that are below $100,000
-nyc_homesales_df <- nyc_homesales_df[!(nyc_homesales_df$`SALE PRICE`<100000),]
-summary(nyc_homesales_df)
-view(nyc_homesales_df)
-
-#Removing non-residential sales
-nyc_homesales_df <- nyc_homesales_df[!(nyc_homesales_df$`BUILDING CLASS CATEGORY`=="21 OFFICE BUILDINGS"|
-                                         nyc_homesales_df$`BUILDING CLASS CATEGORY`=="22 STORE BUILDINGS"|
-                                         nyc_homesales_df$`BUILDING CLASS CATEGORY`=="26 OTHER HOTELS"|
-                                         nyc_homesales_df$`BUILDING CLASS CATEGORY`=="28 COMMERCIAL CONDOS"|
-                                         nyc_homesales_df$`BUILDING CLASS CATEGORY`=="29 COMMERCIAL GARAGES"|
-                                         nyc_homesales_df$`BUILDING CLASS CATEGORY`=="30 WAREHOUSES"|
-                                         nyc_homesales_df$`BUILDING CLASS CATEGORY`=="31 COMMERCIAL VACANT LAND"|
-                                         nyc_homesales_df$`BUILDING CLASS CATEGORY`=="33 EDUCATIONAL FACILITIES"|
-                                         nyc_homesales_df$`BUILDING CLASS CATEGORY`=="43 CONDO OFFICE BUILDINGS"|
-                                         nyc_homesales_df$`BUILDING CLASS CATEGORY`=="44 CONDO PARKING"|
-                                         nyc_homesales_df$`BUILDING CLASS CATEGORY`=="46 CONDO STORE BUILDINGS"|
-                                         nyc_homesales_df$`BUILDING CLASS CATEGORY`=="49 CONDO WAREHOUSES/FACTORY/INDUS"|
-                                         nyc_homesales_df$`BUILDING CLASS CATEGORY`=="11 SPECIAL CONDO BILLING LOTS"|
-                                         nyc_homesales_df$`BUILDING CLASS CATEGORY`=="32 HOSPITAL AND HEALTH FACILITIES"|
-                                         nyc_homesales_df$`BUILDING CLASS CATEGORY`=="42 CONDO CULTURAL/MEDICAL/EDUCATIONAL/ETC"|
-                                         nyc_homesales_df$`BUILDING CLASS CATEGORY`=="25 LUXURY HOTELS"|
-                                         nyc_homesales_df$`BUILDING CLASS CATEGORY`=="45 CONDO HOTELS"|
-                                         nyc_homesales_df$`BUILDING CLASS CATEGORY`=="48 CONDO TERRACES/GARDENS/CABANAS"|
-                                         nyc_homesales_df$`BUILDING CLASS CATEGORY`=="27 FACTORIES"|
-                                         nyc_homesales_df$`BUILDING CLASS CATEGORY`=="36 OUTDOOR RECREATIONAL FACILITIES"|
-                                         nyc_homesales_df$`BUILDING CLASS CATEGORY`=="37 RELIGIOUS FACILITIES"|
-                                         nyc_homesales_df$`BUILDING CLASS CATEGORY`=="38 ASYLUMS AND HOMES"|
-                                         nyc_homesales_df$`BUILDING CLASS CATEGORY`=="41 TAX CLASS 4 - OTHER"|
-                                         nyc_homesales_df$`BUILDING CLASS CATEGORY`=="34 THEATRES"|
-                                         nyc_homesales_df$`BUILDING CLASS CATEGORY`=="40 SELECTED GOVERNMENTAL FACILITIES"|
-                                         nyc_homesales_df$`BUILDING CLASS CATEGORY`=="05 TAX CLASS 1 VACANT LAND"|
-                                         nyc_homesales_df$`BUILDING CLASS CATEGORY`=="06 TAX CLASS 1 - OTHER"|
-                                         nyc_homesales_df$`BUILDING CLASS CATEGORY`=="35 INDOOR PUBLIC AND CULTURAL FACILITIES"),]
-  
-summary(nyc_homesales_df)
-unique(nyc_homesales_df$`BUILDING CLASS CATEGORY`)
-nyc_homesales_df <- nyc_homesales_df[!(nyc_homesales_df$`BUILDING CLASS CATEGORY`=="39 TRANSPORTATION FACILITIES"),]
-
-#Removing apartment numbers from ADDRESS COLUMN
-nyc_homesales_df$ADDRESS <- gsub(",.*","",nyc_homesales_df$ADDRESS)
-view(nyc_homesales_df)
-
-write_csv(nyc_homesales_df,"~..\\aaronwoodward\\Desktop\\nyc_homesales_df")
-
-#Removing apartmen numbers from ADDRESS COLUMN
-nyc_homesales_df$ADDRESS <- gsub(",.*","",nyc_homesales_df$ADDRESS)
-
-#converting streets in an ordinal or sequential naming conventions
-nyc_homesales_df$ADDRESS <- gsub("0 STREET","0TH STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("0 ST","0TH STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("1 STREET","1ST STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("1 ST","1ST STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("2 STREET","2ND STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("2 ST","2ND STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("3 STREET","3RD STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("3 ST","3RD STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("4 STREET","4TH STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("4 ST","4TH STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("5 STREET","5TH STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("5 ST","5TH STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("6 STREET","6TH STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("6 ST","6TH STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("7 STREET","7TH STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("7 ST","7TH STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("8 STREET","8TH STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("8 ST","8TH STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("9 STREET","9TH STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("9 ST","9TH STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("11 STREET","11TH STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("11 ST","11TH STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("12 STREET","12TH STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("12 ST","12TH STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("13 STREET","13TH STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("13 ST","13TH STREET",nyc_homesales_df$ADDRESS)
-
-
-nyc_homesales_df$ADDRESS <- gsub("FIRST","1ST",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("SECOND","2ND",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("THIRD","3RD",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("FOURTH","4TH",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("FIFTH","5TH",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("SIXTH","6TH",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("SEVENTH","7TH",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("EIGHTH","8TH",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("NINTH","9TH",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("TENTH","10TH",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("ELEVENTH","11TH",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("TWELVETH","12TH",nyc_homesales_df$ADDRESS)
-
-nyc_homesales_df$ADDRESS <- gsub("512 E 11ST STREET","512 E 11TH STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("408 WEST 25","408 WEST 25TH STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("201 WEST 16","201 WEST 16TH STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("532 WEST 22","532 WEST 22ND STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("555 WEST 23","555 WEST 23RD STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("133 WEST 22","133 WEST 22ND STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("360 WEST 22","360 WEST 22ND STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("47TH STREET MARKS PLACE","47 ST. MARK'S PLACE",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("27TH STREET MARKS PLACE","27 ST. MARK'S PLACE",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("107TH STREET MARKS PLACE","107 ST. MARK'S PLACE",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("87 SAINT MARKS PLACE","87 ST. MARK'S PLACE",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("12ND STREET","12TH STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("11ST STREET","11TH STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("15TH STREET MARKS PLACE","15 ST. MARK'S PLACE",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("WALL STREEET COURT","WALL STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("16 WEST 16","16 WEST 16TH STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("AVENUE OF THE AMER","AVENUE OF THE AMERICAS",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("10 MADISON SQUARE WEST","1107 BROADWAY",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("7 LEXINGTON AVENU","7 LEXINGTON AVENUE",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("N/A EAST 23RD STREET","10 EAST 23RD STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("225 EAST19TH","225 EAST 19TH STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("27 EAST 11ST STREET","27 EAST 11TH STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("BLEEKER","BLEECKER",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("ONE 5TH AVENUE","1 5TH AVENUE",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("LA GUARDIA","LAGUARDIA",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("13RD STREET","13TH STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("290 W 11TH","290 WEST 11TH STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("MORTON SQUARE","MORTON STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("13RD STREET","13TH STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("11-15TH STREET NICHOLAS AVENUE","11-15 ST. NICHOLAS AVENUE",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("FREDRICK DOUGLASS BL","FREDERICK DOUGLASS BLVD",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("FREDRICK DOUGLASS BL","FREDERICK DOUGLASS BLVD",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("FREDERICK DOUGLAS BLVD","FREDERICK DOUGLASS BLVD",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("112ND STREET","112TH STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("118 WEST 112","118 WEST 112TH STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("ADAM C POWELL BLVD","ADAM CLAYTON POWELL JR BLVD",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("118 WEST 112","118 WEST 112TH STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("258TH STREET NICHOLAS AVENUE","258 ST. NICHOLAS AVENUE",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("362ND STREET. NICHOLAS AVENUE","362 ST. NICHOLAS AVENUE",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("157 WEST 111ST STREET","157 WEST 111TH STREET",nyc_homesales_df$ADDRESS)
-nyc_homesales_df$ADDRESS <- gsub("FREDERICK DOUGLASS B","FREDERICK DOUGLASS BLVD",nyc_homesales_df$ADDRESS)
-
-
-
-#Retrieving geospatial coordinates for addresses 
-nyc_address_coords <- geo_lite(paste0(nyc_homesales_df$ADDRESS,", ",nyc_homesales_df$BOROUGH,", NY ",nyc_homesales_df$`ZIP CODE`), lat = "lat", long = "lon", limit = 1)
-
-head(nyc_address_coords)
-
-geo_lite("47 ST. MARK'S PLACE, MANHATTAN, NY 10003")
-
-#r <- GET('https://data-beta-nyc-files.s3.amazonaws.com/resources/35dd04fb-81b3-479b-a074-a27a37888ce7/d085e2f8d0b54d4590b1e7d1f35594c1pediacitiesnycneighborhoods.geojson?Signature=3N%2ByC8%2BAq59PIiO%2F4w%2BZYb3%2Fiqg%3D&Expires=1650859374&AWSAccessKeyId=AKIAWM5UKMRH2KITC3QA')
-nyc_neighborhoods <- readOGR("https://data-beta-nyc-files.s3.amazonaws.com/resources/35dd04fb-81b3-479b-a074-a27a37888ce7/d085e2f8d0b54d4590b1e7d1f35594c1pediacitiesnycneighborhoods.geojson?Signature=xvf1EjzzGA7wuDBVldYCqgtTgdk%3D&Expires=1650859640&AWSAccessKeyId=AKIAWM5UKMRH2KITC3QA") 
-summary(nyc_neighborhoods)
-
-leaflet(nyc_neighborhoods) %>%
-  addTiles() %>% 
-  addPolygons(popup = ~neighborhood) %>%
-  addProviderTiles("CartoDB.Positron")
-
-nyc_address_coords <- geo_lite(nyc_homesales_df$ADDRESS, lat = "lat", long = "lon", limit = 1)
-
-
-
-
-
-
-
-
-
-
-
-
-manhattan_df <- manhattan_df %>% mutate_at(c('RESIDENTIAL UNITS','COMMERCIAL UNITS','TOTAL UNITS','LAND SQUARE FEET',
-                                             'GROSS SQUARE FEET', 'SALE PRICE'), as.numeric)
-
-#manhattan_df$sale_date <- manhattan_df$`SALE DATE`
-manhattan_df$`SALE DATE` <- as.Date(manhattan_df$`SALE DATE`, format = "%Y/%m/%d")
-
-head(manhattan_df)
-summary(manhattan_df)
-
-nyc_nta <-read.socrata(
-    "https://data.cityofnewyork.us/resource/q2z5-ai38.json",
-    app_token = "SAVvPY9DDYV1TmGl9fqF4bvIR",
-    email     = "aaron.woodward1@gmail.com",
-    password  = "Hudson@27")
-
-head(nyc_nta)
-
-leaflet(nyc_nta) %>%
-  addTiles() %>%
-  addPolygons(stroke = FALSE, smoothFactor = 0.3, fillOpacity = 1,
-              label = ~paste0(name, ": "))
-
-
-
-
-
-nyc_hoods <- readOGR("https://services5.arcgis.com/GfwWNkhOj9bNBqoJ/arcgis/rest/services/Neighborhood_Names/FeatureServer/0/query?where=1=1&outFields=*&outSR=4326&f=pgeojson") 
-pal <- colorNumeric("viridis", NULL)
-
-leaflet(nycounties) %>%
-  addTiles() %>%
-  addPolygons(stroke = FALSE, smoothFactor = 0.3, fillOpacity = 1,
-              fillColor = ~pal(log10(pop)),
-              label = ~paste0(Name, ": ", formatC(pop, big.mark = ","))) %>%
-  addLegend(pal = pal, values = ~log10(pop), opacity = 1.0,
-            labFormat = labelFormat(transform = function(x) round(10^x)))
-
-##############################
-#Brooklyn
-
+# Loading packages that are or might be needed 
 library(sf)
 library(tidyverse)
 library(dplyr, warn.conflicts = FALSE)
@@ -400,24 +12,15 @@ library(rjson)
 library(stringr)
 library(janitor)
 library(plotly)
-library(RSocrata)
 library(rNYCclean)
 library(reshape2)
-library(splitstackshape)
 library(tidygeocoder)
 
+##############################
+#Brooklyn
 
+# Install rNYCclean package to assist in cleaning addresses in Rolling Sales datasets
 devtools::install_github("gmculp/rNYCclean", force = TRUE)
-
-
-nyc_housing_mkt_df <- read.socrata(
-  "https://data.cityofnewyork.us/resource/5ebm-myj7.json",
-  app_token = "SAVvPY9DDYV1TmGl9fqF4bvIR",
-  email     = "aaron.woodward1@gmail.com",
-  password  = "Hudson@27")
-
-#Set working directory
-setwd("~aaronwoodward/Desktop")
 
 #Loading property sales data
 brooklyn_df <- read.csv("rollingsales_brooklyn.csv")
@@ -475,8 +78,6 @@ brooklyn_home_sales_df <- subset(brooklyn_df, BUILDING_CLASS_CATEGORY == "09 COO
                                    BUILDING_CLASS_CATEGORY =="17 CONDO COOPS" | BUILDING_CLASS_CATEGORY=="01 ONE FAMILY DWELLINGS" )
 
 
-
-
 #Cleaning Addresses
 # Separating the apartment numbers from addresses
 brooklyn_home_sales_df$ADDRESS <- gsub(",.*","",brooklyn_home_sales_df$ADDRESS)
@@ -503,7 +104,6 @@ brooklyn_home_sales_df <- brooklyn_home_sales_df %>%
 
 sum(is.na(brooklyn_home_sales_df$latitude))
 
-#Missing lat/lon coordinates for 412 (9%) addresses
 
 #Creating a dataframe of addresses that do not have coords.
 
@@ -652,7 +252,6 @@ bklyn_addr_na <- bklyn_addr_na %>%
   rename(latitude = latitude...30,
          longitude = longitude...31)
 
-
 sum(is.na(bklyn_addr_na$latitude))
 
 #Need to only clean 6 more addresses, update in both dataframes
@@ -686,26 +285,15 @@ brooklyn_df <- merged_df %>%
 
 sum(is.na(brooklyn_df$latitude))
 
-#All addresses now have coords, we need to convert these coords into geometries.
-#merged_df1 <- merged_df %>%
-#  mutate(GEOMETRY = st_as_sf(merged_df, coords = c("longitude", "latitude"), crs=4326, 
-#                             agr = "constant"))
-
 brooklyn_df <- st_as_sf(brooklyn_df, coords = c(x = "longitude", y = "latitude"), crs = 4326)
 nyc_nta_sf <- st_read(dsn  = "./2020 Neighborhood Tabulation Areas (NTAs) - Tabular/geo_export_1183c9a2-33e9-4c9c-9c60-b600cbed4e05.shp")
 nyc_nta_sf <- st_transform(nyc_nta_sf, 4326)
-
-
-#nyc_neighborhoods_sf <- as_Spatial(nyc_nta_df$the_geom.coordinates)
-
-#nyc_neighborhoods_sf <- geojson_sf(nyc_nta_df$the_geom.coordinates, expand_geometries = FALSE, crs = 4326)
-#nyc_neighborhoods_sf <- st_sf(nyc_nta_df, sf_column_name = "the_geom.coordinates", crs = 4236)
-#merged_df1 <- st_sfc(st_point(merged_df, coords = c("longitude", "latitude"), crs=4326))
 
 brooklyn_sf <- st_join(brooklyn_df, nyc_nta_sf["ntaname"])
 str(brooklyn_sf)
 
 ####
+
 #Aggregating Monthly Home Sales Data by Neighborhood
 
 brooklyn_sf$SALES_YEAR <- strftime(brooklyn_sf$SALE_DATE, "%Y")
@@ -734,32 +322,9 @@ brooklyn_monthly_medsales <- brooklyn_monthly_medsales %>%
   )
 
 
-
-#########################
-
-#Loading required libraries
-library(tidyverse)
-library(dplyr, warn.conflicts = FALSE)
-library(tidyr)
-library(ggplot2)
-library(rvest)
-library(lubridate)
-library(rjson)
-library(stringr)
-library(janitor)
-library(plotly)
-library(RSocrata)
-library(rNYCclean)
-library(reshape2)
-library(splitstackshape)
-library(tidygeocoder)
-library(sf)
-
+####################
 
 #Manhattan
-
-#Set working directory
-setwd("~aaronwoodward/Desktop")
 
 #Loading property sales data
 manhattan_df <- read.csv("rollingsales_manhattan.csv")
@@ -803,7 +368,7 @@ manhattan_df$SALE_DATE <- mdy(manhattan_df$SALE_DATE)
 
 str(manhattan_df)
 
-#Removing records that have sale prices <$100,000
+#Removing records that have sale prices <$150,000
 manhattan_df <- manhattan_df[!(manhattan_df$SALE_PRICE<150000),]
 
 summary(manhattan_df)
@@ -844,16 +409,10 @@ manhattan_df$ADDRESS_CLEAN <- gsub("123-25 EAST 102ND STREET","125 EAST 102ND ST
 manhattan_df <- manhattan_df %>%
   mutate(FULL_ADDR = paste0(ADDRESS_CLEAN,", ",BOROUGH,", NY, ",ZIP_CODE))
 
-#W 77,N. MOORE STREET
-###Geocoding using the tidygeocoder R package to get latitude and longitude for all addresses
-#install.packages('tidygeocoder')
-
 manhattan_df <- manhattan_df %>% 
   geocode(FULL_ADDR, method = 'osm', lat = latitude , long = longitude)
 
 sum(is.na(manhattan_df$latitude))
-
-#Missing lat/lon coordinates for 412 (9%) addresses
 
 #Creating a dataframe of addresses that do not have coords.
 
@@ -1083,7 +642,6 @@ manh_addr_na$FULL_ADDR <- gsub("ONE FIFTH AVENUE","1 5TH AVENUE",manh_addr_na$FU
 manh_addr_na$FULL_ADDR <- gsub("ONE WALL STREET COURT","1 WALL STREET",manh_addr_na$FULL_ADDR)
 manh_addr_na$FULL_ADDR <- gsub("AVENUEENUE","AVENUE",manh_addr_na$FULL_ADDR)
 
-
 manh_addr_na <- manh_addr_na %>% 
   geocode(FULL_ADDR, method = 'osm', lat = latitude , long = longitude)
 
@@ -1092,12 +650,10 @@ manh_addr_na <- manh_addr_na %>%
   rename(latitude = latitude...30,
          longitude = longitude...31)
 
-
 sum(is.na(manh_addr_na$latitude))
 
 
-
-#Need to only clean 6 more addresses, update in both dataframes
+#Cleaning remaining addresses that stilln don't have coords.
 manh_addr_na_2 <- manh_addr_na[is.na(manh_addr_na$latitude),]
 
 manh_addr_na_2$FULL_ADDR <- gsub("E 30 ST","EAST 30TH STREET",manh_addr_na_2$FULL_ADDR)
@@ -1126,10 +682,6 @@ manh_addr_na_2 <- manh_addr_na_2 %>%
          longitude = longitude...31)
 
 
-
-
-
-
 #Joining the dataframes that had no coords
 manh_addr_na_joined1 <- full_join(manh_addr_na, manh_addr_na_2)
 manh_addr_na_joined1 <- manh_addr_na_joined1 %>%
@@ -1150,53 +702,6 @@ manhattan_df <- manhattan_df %>%
 sum(is.na(manhattan_df$latitude))
 
 
-#Need to only clean 1 more addresses, update in both dataframes
-#manh_addr_na_3 <- manh_addr_na[is.na(manh_addr_na$latitude),]
-
-#manh_addr_na_3$FULL_ADDR <- gsub("5 AVENUE","5TH AVENUE",manh_addr_na_3$FULL_ADDR)
-
-
-#manh_addr_na_3 <- manh_addr_na_3 %>% 
-#  geocode(FULL_ADDR, method = 'osm', lat = latitude , long = longitude)
-
-#manh_addr_na_3 <- subset(manh_addr_na_3, select = -c(latitude...28,longitude...29))
-#manh_addr_na_3 <- manh_addr_na_3 %>%
-#  rename(latitude = latitude...30,
-#         longitude = longitude...31)
-
-#Joining the dataframes that had no coords
-#manh_addr_na_joined1 <- full_join(manh_addr_na, manh_addr_na_2)
-#manh_addr_na_joined2 <- full_join(manh_addr_na_joined1, manh_addr_na_3)
-#manh_addr_na_joined2 <- manh_addr_na_joined2 %>%
-#  filter(!is.na(latitude), !is.na(longitude))
-
-#sum(is.na(manh_addr_na_joined2$latitude))
-#sum(is.na(manh_addr_na_joined2$latitude))
-
-##Joining datasets
-#manh_addr_na_joined1 <- full_join(manh_addr_na, manh_addr_na_2)
-
-#manhattan_df <- full_join(manhattan_df, manh_addr_na_joined2)
-#sum(is.na(manhattan_df$latitude))
-
-#manhattan_df <- manhattan_df %>%
-#  filter(!is.na(latitude), !is.na(longitude))
-
-#sum(is.na(manhattan_df$latitude))
-
-#Eliminate Central Park and Randall's Island from NTA dataset
-#nyc_nta_sf <- gsub("Randall's Island","Randalls Island",nyc_nta_sf$ntaname)
-
-
-nyc_nta_sf <- nyc_nta_sf %>% 
-  filter(!(ntaname =="Randall's Island" | ntaname =="Central Park"))
-#brooklyn_df[!(brooklyn_df$SALE_PRICE<50000),]
-#All addresses now have coords, we need to convert these coords into geometries.
-#library(geojsonsf)
-#merged_df1 <- merged_df %>%
-#  mutate(GEOMETRY = st_as_sf(merged_df, coords = c("longitude", "latitude"), crs=4326, 
-#                             agr = "constant"))
-
 manhattan_df <- st_as_sf(manhattan_df, coords = c(x = "longitude", y = "latitude"), crs = 4326)
 nyc_nta_sf <- st_read(dsn  = "./2020 Neighborhood Tabulation Areas (NTAs) - Tabular/geo_export_1183c9a2-33e9-4c9c-9c60-b600cbed4e05.shp")
 nyc_nta_sf <- st_transform(nyc_nta_sf, 4326)
@@ -1212,6 +717,7 @@ manhattan_sf <- st_join(manhattan_df, nyc_nta_sf["ntaname"])
 
 manhattan_sf <- manhattan_sf %>%
   filter(!is.na(ntaname))
+
 ####
 #Aggregating Monthly Home Sales Data by Neighborhood
 
@@ -1241,13 +747,9 @@ manhattan_monthly_medsales <- manhattan_monthly_medsales %>%
   )
 
 
-#manhattan_homesales_month_df = sf_to_da
-
+######################
 
 #Queens
-
-#Set working directory
-setwd("~aaronwoodward/Desktop")
 
 #Loading property sales data
 queens_df <- read.csv("rollingsales_queens.csv")
@@ -1815,32 +1317,8 @@ sum(is.na(queens_addr_na$latitude))
 queens_addr_na <- queens_addr_na %>%
   filter(!is.na(latitude), !is.na(longitude))
 
-#sum(is.na(queens_df$latitude))
-
-#queens_addr_na_2 <- queens_addr_na_2 %>% 
-#  geocode(FULL_ADDR, method = 'osm', lat = latitude , long = longitude)
-
-#queens_addr_na_2 <- subset(queens_addr_na_2, select = -c(latitude...28,longitude...29))
-#queens_addr_na_2 <- queens_addr_na_2 %>%
-#  rename(latitude = latitude...30,
-#         longitude = longitude...31)
-
-#Joining the dataframes that had no coords
-#queens_addr_na_joined1 <- full_join(queens_addr_na, queens_addr_na_2)
-#queens_addr_na_joined1 <- queens_addr_na_joined1 %>%
-#  filter(!is.na(latitude), !is.na(longitude))
-
-#sum(is.na(queens_addr_na_joined1$latitude))
-#sum(is.na(queens_addr_na_joined1$latitude))
-
-##Joining datasets
-#queens_addr_na_joined1 <- full_join(queens_addr_na, queens_addr_na_2)
-
 queens_df <- full_join(queens_df, queens_addr_na)
 sum(is.na(queens_df$latitude))
-
-#Checking for duplicates
-#queens_df[duplicated(queens_df),]
 
 
 queens_df <- queens_df %>%
@@ -1850,33 +1328,15 @@ sum(is.na(queens_df$latitude))
 
 #All addresses now have coords, we need to convert these coords into geometries.
 
-#library(geojsonsf)
-#merged_df1 <- merged_df %>%
-#  mutate(GEOMETRY = st_as_sf(merged_df, coords = c("longitude", "latitude"), crs=4326, 
-#                             agr = "constant"))
-
 queens_df <- st_as_sf(queens_df, coords = c(x = "longitude", y = "latitude"), crs = 4326)
 nyc_nta_sf <- st_read(dsn  = "./2020 Neighborhood Tabulation Areas (NTAs) - Tabular/geo_export_1183c9a2-33e9-4c9c-9c60-b600cbed4e05.shp")
 nyc_nta_sf <- st_transform(nyc_nta_sf, 4326)
-
-
-#nyc_neighborhoods_sf <- as_Spatial(nyc_nta_df$the_geom.coordinates)
-
-#nyc_neighborhoods_sf <- geojson_sf(nyc_nta_df$the_geom.coordinates, expand_geometries = FALSE, crs = 4326)
-#nyc_neighborhoods_sf <- st_sf(nyc_nta_df, sf_column_name = "the_geom.coordinates", crs = 4236)
-#merged_df1 <- st_sfc(st_point(merged_df, coords = c("longitude", "latitude"), crs=4326))
 
 queens_sf <- st_join(queens_df, nyc_nta_sf["ntaname"])
 
 
 ####
 #Aggregating Monthly Home Sales Data by Neighborhood
-
-#SALES_MONTH <- month(queens_sf$SALE_DATE)
-#SALES_YEAR <- year(queens_sf$SALE_DATE)
-
-#SALES_YEAR_MONTH <- paste0(SALES_YEAR,"-",SALES_MONTH)
-#SALES_YEAR_MONTH <- ym(SALES_YEAR_MONTH)
 
 queens_sf$SALES_YEAR <- strftime(queens_sf$SALE_DATE, "%Y")
 queens_sf$SALES_MONTH <- strftime(queens_sf$SALE_DATE, "%m")
@@ -1893,8 +1353,6 @@ queens_sf$SALE_YEAR_MONTH <- floor_date(queens_sf$SALE_DATE, "month")
 
 queens_monthly_medsales <- queens_sf[,c("BOROUGH","ntaname", "SALE_YEAR_MONTH", "SALE_PRICE", "PRICE_PER_SQFT")] 
 
-#queens_monthly_medsales$MEDIAN_SALE_PRICE <- aggregate(SALE_PRICE ~ SALE_YEAR_MONTH + ntaname, data = queens_monthly_medsales, FUN = median)
-
 queens_monthly_medsales <- queens_monthly_medsales %>% 
   group_by(ntaname, SALE_YEAR_MONTH) %>%
   summarise(MEDIAN_SALE_PRICE = median(SALE_PRICE),
@@ -1902,11 +1360,10 @@ queens_monthly_medsales <- queens_monthly_medsales %>%
             MAX_SALE_PRICE = max(SALE_PRICE),
             MIN_SALE_PRICE = min(SALE_PRICE)
             )
-  
-#THE BRONX
 
-#Set working directory
-setwd("~aaronwoodward/Desktop")
+##################
+
+#THE BRONX
 
 #Loading property sales data
 bronx_df <- read.csv("rollingsales_bronx.csv")
@@ -1950,7 +1407,7 @@ bronx_df$SALE_DATE <- mdy(bronx_df$SALE_DATE)
 
 str(bronx_df)
 
-#Removing records that have sale prices <$100,000
+#Removing records that have sale prices <$50,000
 bronx_df <- bronx_df[!(bronx_df$SALE_PRICE<50000),]
 
 summary(bronx_df)
@@ -1990,8 +1447,6 @@ bronx_df <- bronx_df %>%
   geocode(FULL_ADDR, method = 'osm', lat = latitude , long = longitude)
 
 sum(is.na(bronx_df$latitude))
-
-#Missing lat/lon coordinates for 412 (9%) addresses
 
 #Creating a dataframe of addresses that do not have coords.
 
@@ -2093,32 +1548,8 @@ sum(is.na(bronx_addr_na$latitude))
 bronx_addr_na <- bronx_addr_na %>%
   filter(!is.na(latitude), !is.na(longitude))
 
-#sum(is.na(bronx_df$latitude))
-
-#bronx_addr_na_2 <- bronx_addr_na_2 %>% 
-#  geocode(FULL_ADDR, method = 'osm', lat = latitude , long = longitude)
-
-#bronx_addr_na_2 <- subset(bronx_addr_na_2, select = -c(latitude...28,longitude...29))
-#bronx_addr_na_2 <- bronx_addr_na_2 %>%
-#  rename(latitude = latitude...30,
-#         longitude = longitude...31)
-
-#Joining the dataframes that had no coords
-#bronx_addr_na_joined1 <- full_join(bronx_addr_na, bronx_addr_na_2)
-#bronx_addr_na_joined1 <- bronx_addr_na_joined1 %>%
-#  filter(!is.na(latitude), !is.na(longitude))
-
-#sum(is.na(bronx_addr_na_joined1$latitude))
-#sum(is.na(bronx_addr_na_joined1$latitude))
-
-##Joining datasets
-#bronx_addr_na_joined1 <- full_join(bronx_addr_na, bronx_addr_na_2)
-
 bronx_df <- full_join(bronx_df, bronx_addr_na)
 sum(is.na(bronx_df$latitude))
-
-#Checking for duplicates
-#bronx_df[duplicated(bronx_df),]
 
 
 bronx_df <- bronx_df %>%
@@ -2126,35 +1557,15 @@ bronx_df <- bronx_df %>%
 
 sum(is.na(bronx_df$latitude))
 
-#All addresses now have coords, we need to convert these coords into geometries.
-
-#library(geojsonsf)
-#merged_df1 <- merged_df %>%
-#  mutate(GEOMETRY = st_as_sf(merged_df, coords = c("longitude", "latitude"), crs=4326, 
-#                             agr = "constant"))
 
 bronx_df <- st_as_sf(bronx_df, coords = c(x = "longitude", y = "latitude"), crs = 4326)
 nyc_nta_sf <- st_read(dsn  = "./2020 Neighborhood Tabulation Areas (NTAs) - Tabular/geo_export_1183c9a2-33e9-4c9c-9c60-b600cbed4e05.shp")
 nyc_nta_sf <- st_transform(nyc_nta_sf, 4326)
 
-
-#nyc_neighborhoods_sf <- as_Spatial(nyc_nta_df$the_geom.coordinates)
-
-#nyc_neighborhoods_sf <- geojson_sf(nyc_nta_df$the_geom.coordinates, expand_geometries = FALSE, crs = 4326)
-#nyc_neighborhoods_sf <- st_sf(nyc_nta_df, sf_column_name = "the_geom.coordinates", crs = 4236)
-#merged_df1 <- st_sfc(st_point(merged_df, coords = c("longitude", "latitude"), crs=4326))
-
 bronx_sf <- st_join(bronx_df, nyc_nta_sf["ntaname"])
 
 
 ####
-#Aggregating Monthly Home Sales Data by Neighborhood
-
-#SALES_MONTH <- month(bronx_sf$SALE_DATE)
-#SALES_YEAR <- year(bronx_sf$SALE_DATE)
-
-#SALES_YEAR_MONTH <- paste0(SALES_YEAR,"-",SALES_MONTH)
-#SALES_YEAR_MONTH <- ym(SALES_YEAR_MONTH)
 
 bronx_sf$SALES_YEAR <- strftime(bronx_sf$SALE_DATE, "%Y")
 bronx_sf$SALES_MONTH <- strftime(bronx_sf$SALE_DATE, "%m")
@@ -2171,8 +1582,6 @@ bronx_sf$SALE_YEAR_MONTH <- floor_date(bronx_sf$SALE_DATE, "month")
 
 bronx_monthly_medsales <- bronx_sf[,c("BOROUGH","ntaname", "SALE_YEAR_MONTH", "SALE_PRICE", "PRICE_PER_SQFT")] 
 
-#bronx_monthly_medsales$MEDIAN_SALE_PRICE <- aggregate(SALE_PRICE ~ SALE_YEAR_MONTH + ntaname, data = bronx_monthly_medsales, FUN = median)
-
 bronx_monthly_medsales <- bronx_monthly_medsales %>% 
   group_by(ntaname, SALE_YEAR_MONTH) %>%
   summarise(MEDIAN_SALE_PRICE = median(SALE_PRICE),
@@ -2180,287 +1589,6 @@ bronx_monthly_medsales <- bronx_monthly_medsales %>%
             MAX_SALE_PRICE = max(SALE_PRICE),
             MIN_SALE_PRICE = min(SALE_PRICE)
   )
-
-#STATEN ISLAND
-
-#Set working directory
-setwd("~aaronwoodward/Desktop")
-
-#Loading property sales data
-statenisland_df <- read.csv("rollingsales_statenisland.csv")
-
-#Cleaning property sales data
-statenisland_df <- janitor::row_to_names(statenisland_df, 4, remove_rows_above = TRUE) 
-head(statenisland_df)
-colnames(statenisland_df)
-
-#Renaming variables:
-statenisland_df <- statenisland_df %>% 
-  rename(SALE_PRICE = `SALE PRICE`, 
-         RESIDENTIAL_UNITS = `RESIDENTIAL UNITS`,
-         COMMERCIAL_UNITS = `COMMERCIAL UNITS`,
-         TOTAL_UNITS = `TOTAL UNITS`,
-         LAND_SQ_FT = `LAND SQUARE FEET`,
-         GROSS_SQ_FT = `GROSS SQUARE FEET`,
-         SALE_DATE = `SALE DATE`,
-         APT_NUMBER = `APARTMENT NUMBER`,
-         ZIP_CODE = `ZIP CODE`,
-         YEAR_BUILT = `YEAR BUILT`,
-         TAX_CLASS_AT_PRESENT = `TAX CLASS AT PRESENT`,
-         TAX_CLASS_AT_TOS = `TAX CLASS AT TIME OF SALE`,
-         BUILDING_CLASS_AT_PRESENT = `BUILDING CLASS AT PRESENT`,
-         BUILDING_CLASS_AT_TOS = `BUILDING CLASS AT TIME OF SALE`,
-         BUILDING_CLASS_CATEGORY = `BUILDING CLASS CATEGORY`,
-         BOROUGH_CODE = BOROUGH)
-
-statenisland_df <- statenisland_df %>% 
-  mutate(BOROUGH = "STATEN ISLAND")
-
-#Changing Data types
-statenisland_df$SALE_PRICE <- as.numeric(gsub(",", "", statenisland_df$SALE_PRICE))
-statenisland_df$RESIDENTIAL_UNITS <- as.numeric(gsub(",", "", statenisland_df$RESIDENTIAL_UNITS))
-statenisland_df$COMMERCIAL_UNITS <- as.numeric(gsub(",", "", statenisland_df$COMMERCIAL_UNITS))
-statenisland_df$TOTAL_UNITS <- as.numeric(gsub(",", "", statenisland_df$TOTAL_UNITS))
-statenisland_df$LAND_SQ_FT <- as.numeric(gsub(",", "", statenisland_df$LAND_SQ_FT))
-statenisland_df$GROSS_SQ_FT <- as.numeric(gsub(",", "", statenisland_df$GROSS_SQ_FT))
-statenisland_df$SALE_DATE <- mdy(statenisland_df$SALE_DATE)
-#statenisland_df$SALE_MONTH <- as.Date(statenisland_df$SALE_MONTH,"%m/%d/%y")
-
-str(statenisland_df)
-
-#Removing records that have sale prices <$100,000
-statenisland_df <- statenisland_df[!(statenisland_df$SALE_PRICE<50000),]
-
-summary(statenisland_df)
-
-#Removing non-residential and rental property sales by subsetting BUILDING_CLASS_CATEGORY
-statenisland_df <- subset(statenisland_df, BUILDING_CLASS_CATEGORY == "09 COOPS - WALKUP APARTMENTS" | 
-                     BUILDING_CLASS_CATEGORY == "10 COOPS - ELEVATOR APARTMENTS" | 
-                     BUILDING_CLASS_CATEGORY == "12 CONDOS - WALKUP APARTMENTS" | 
-                     BUILDING_CLASS_CATEGORY == "13 CONDOS - ELEVATOR APARTMENTS" | 
-                     BUILDING_CLASS_CATEGORY =="17 CONDO COOPS" | BUILDING_CLASS_CATEGORY=="01 ONE FAMILY DWELLINGS" )
-
-#Cleaning Addresses
-# Separating the apartment numbers and dashes from addresses
-statenisland_df$ADDRESS <- gsub(",.*","",statenisland_df$ADDRESS)
-statenisland_df$ADDRESS <- gsub("-","",statenisland_df$ADDRESS)
-
-# get version of DCP PAD used to build rNYCclean package data
-rNYCclean::pad_version
-
-system.time({statenisland_df <- pad_addr(statenisland_df,"ADDR.pad","ADDRESS","BOROUGH_CODE","boro_code")})
-
-#Getting clean addresses
-statenisland_df <- statenisland_df %>%
-  mutate(ADDRESS_CLEAN = ifelse(is.na(ADDR.pad),ADDRESS,ADDR.pad))
-
-#Removing dashes from ADDRESS_CLEAN
-statenisland_df$ADDRESS_CLEAN <- gsub("-","",statenisland_df$ADDRESS_CLEAN)
-
-#Putting together full addresses
-statenisland_df <- statenisland_df %>%
-  mutate(FULL_ADDR = paste0(ADDRESS_CLEAN,", ",BOROUGH,", NY, ",ZIP_CODE))
-
-###Geocoding using the tidygeocoder R package to get latitude and longitude for all addresses
-#install.packages('tidygeocoder')
-
-statenisland_df <- statenisland_df %>% 
-  geocode(FULL_ADDR, method = 'osm', lat = latitude , long = longitude)
-
-sum(is.na(statenisland_df$latitude))
-
-#Missing lat/lon coordinates for 412 (9%) addresses
-
-#Creating a dataframe of addresses that do not have coords.
-
-statenisland_addr_na <- statenisland_df[is.na(statenisland_df$latitude),]
-statenisland_addr_na_unique <- data.frame(unique(statenisland_addr_na$FULL_ADDR))
-
-write.csv(statenisland_addr_na_unique, "~aaronwoodward/Desktop/statenisland_ADDR_NA")
-#Cleaning addresses that the tidygeocoder did not return coords.
-statenisland_addr_na$FULL_ADDR <- gsub("EXPWY","EXPRESSWAY",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("232 STREET","232ND STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("229 STREET","229TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("CAROLL","CARROLL",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("237 STREET","237TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("215 STREET","215TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("219 STREET","219TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("230 STREET","230TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("213 STREET","213TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("235 STREET","235TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("178 STREET","178TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("11B EDGEWATER PARK","11 EDGEWATER PARK",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("224 STREET","224TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("122C EDGEWATER PARK","122 EDGEWATER PARK",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("222 STREET","222ND STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("167 STREET","167TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("184 STREET","184TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("131B EDGEWATER PARK","131 EDGEWATER PARK",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("132B EDGEWATER PARK","132 EDGEWATER PARK",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("133D EDGEWATER PARK","133 EDGEWATER PARK",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("136D EDGEWATER PARK","136 EDGEWATER PARK",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("BAY VIEW","BAYVIEW",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("16B EDGEWATER PARK","16 EDGEWATER PARK",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("ST RAYMOND AVENUE","ST. RAYMOND AVENUE",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("179 STREET","179TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("202 STREET","202ND STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("239 STREET","239TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("260 STREET","260TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("AQUEDUCT AVENUE EAST","AQUEDUCT AVENUE",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("236 STREET","236TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("261 STREET","261ST STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("26A EDGEWATER PARK","26 EDGEWATER PARK",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("163 STREET","163RD STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("197 STREET","197TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("196 STREET","196TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("140 STREET","140TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("169 STREET","169TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("201 STREET","201ST STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("240 STREET","240TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("245 STREET","245TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("3A EDGEWATER PARK","3 EDGEWATER PARK",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("141 STREET","141ST STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("136 STREET","136TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("139 STREET","139TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("143 STREET","143RD STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("238 STREET","238TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("144 STREET","144TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("43B EDGEWATER PARK","43 EDGEWATER PARK",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("180 STREET","180TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("142 STREET","142ND STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("158 STREET","158TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("46A EDGEWATER PARK","46 EDGEWATER PARK",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("W 232 ST","WEST 232ND STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("W 236 ST","WEST 236TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("159 STREET","159TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("190 STREET","190TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("249 STREET","249TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("61E EDGEWATER PARK","61 EDGEWATER PARK",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("223 STREET","223RD STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("182 STREET","182ND STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("231 STREET","231ST STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("226 STREET","226TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("W 239 ST","WEST 239TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("217 STREET","217TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("218 STREET","218TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("E 231 ST","EAST 231ST STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("231 ST","231ST STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("75B EDGEWATER PARK","75 EDGEWATER PARK",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("W. 238 ST","WEST 238TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("EXPWY SR","EXPRESSWAY",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("82D EDGEWATER PARK","82 EDGEWATER PARK",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("216 STREET","216TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("228 STREET","228TH STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("85D EDGEWATER PARK","85 EDGEWATER PARK",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("241 STREET","241ST STREET",statenisland_addr_na$FULL_ADDR)
-statenisland_addr_na$FULL_ADDR <- gsub("EXPRESSWAY SR","EXPRESSWAY",statenisland_addr_na$FULL_ADDR)
-
-
-statenisland_addr_na <- statenisland_addr_na %>% 
-  geocode(FULL_ADDR, method = 'osm', lat = latitude , long = longitude)
-
-statenisland_addr_na <- subset(statenisland_addr_na, select = -c(latitude...28,longitude...29))
-statenisland_addr_na <- statenisland_addr_na %>%
-  rename(latitude = latitude...30,
-         longitude = longitude...31)
-
-
-sum(is.na(statenisland_addr_na$latitude))
-
-# Dropping the statenisland addresses that don't have coords.
-statenisland_addr_na <- statenisland_addr_na %>%
-  filter(!is.na(latitude), !is.na(longitude))
-
-#sum(is.na(statenisland_df$latitude))
-
-#statenisland_addr_na_2 <- statenisland_addr_na_2 %>% 
-#  geocode(FULL_ADDR, method = 'osm', lat = latitude , long = longitude)
-
-#statenisland_addr_na_2 <- subset(statenisland_addr_na_2, select = -c(latitude...28,longitude...29))
-#statenisland_addr_na_2 <- statenisland_addr_na_2 %>%
-#  rename(latitude = latitude...30,
-#         longitude = longitude...31)
-
-#Joining the dataframes that had no coords
-#statenisland_addr_na_joined1 <- full_join(statenisland_addr_na, statenisland_addr_na_2)
-#statenisland_addr_na_joined1 <- statenisland_addr_na_joined1 %>%
-#  filter(!is.na(latitude), !is.na(longitude))
-
-#sum(is.na(statenisland_addr_na_joined1$latitude))
-#sum(is.na(statenisland_addr_na_joined1$latitude))
-
-##Joining datasets
-#statenisland_addr_na_joined1 <- full_join(statenisland_addr_na, statenisland_addr_na_2)
-
-statenisland_df <- full_join(statenisland_df, statenisland_addr_na)
-sum(is.na(statenisland_df$latitude))
-
-#Checking for duplicates
-#statenisland_df[duplicated(statenisland_df),]
-
-
-statenisland_df <- statenisland_df %>%
-  filter(!is.na(latitude), !is.na(longitude))
-
-sum(is.na(statenisland_df$latitude))
-
-#All addresses now have coords, we need to convert these coords into geometries.
-
-#library(geojsonsf)
-#merged_df1 <- merged_df %>%
-#  mutate(GEOMETRY = st_as_sf(merged_df, coords = c("longitude", "latitude"), crs=4326, 
-#                             agr = "constant"))
-
-statenisland_df <- st_as_sf(statenisland_df, coords = c(x = "longitude", y = "latitude"), crs = 4326)
-nyc_nta_sf <- st_read(dsn  = "./2020 Neighborhood Tabulation Areas (NTAs) - Tabular/geo_export_1183c9a2-33e9-4c9c-9c60-b600cbed4e05.shp")
-nyc_nta_sf <- st_transform(nyc_nta_sf, 4326)
-
-
-#nyc_neighborhoods_sf <- as_Spatial(nyc_nta_df$the_geom.coordinates)
-
-#nyc_neighborhoods_sf <- geojson_sf(nyc_nta_df$the_geom.coordinates, expand_geometries = FALSE, crs = 4326)
-#nyc_neighborhoods_sf <- st_sf(nyc_nta_df, sf_column_name = "the_geom.coordinates", crs = 4236)
-#merged_df1 <- st_sfc(st_point(merged_df, coords = c("longitude", "latitude"), crs=4326))
-
-statenisland_sf <- st_join(statenisland_df, nyc_nta_sf["ntaname"])
-
-
-####
-#Aggregating Monthly Home Sales Data by Neighborhood
-
-#SALES_MONTH <- month(statenisland_sf$SALE_DATE)
-#SALES_YEAR <- year(statenisland_sf$SALE_DATE)
-
-#SALES_YEAR_MONTH <- paste0(SALES_YEAR,"-",SALES_MONTH)
-#SALES_YEAR_MONTH <- ym(SALES_YEAR_MONTH)
-
-statenisland_sf$SALES_YEAR <- strftime(statenisland_sf$SALE_DATE, "%Y")
-statenisland_sf$SALES_MONTH <- strftime(statenisland_sf$SALE_DATE, "%m")
-
-
-#Creating value metric "price_per_sqft" - price per square footage.
-statenisland_sf$PRICE_PER_SQFT <- statenisland_sf$SALE_PRICE / statenisland_sf$GROSS_SQ_FT
-
-
-#Aggregate sale metrics by month for each neighborhood "ntaname"
-
-#Using lubridate package to pair sales with month and year of sale
-statenisland_sf$SALE_YEAR_MONTH <- floor_date(statenisland_sf$SALE_DATE, "month")
-
-statenisland_monthly_medsales <- statenisland_sf[,c("BOROUGH","ntaname", "SALE_YEAR_MONTH", "SALE_PRICE", "PRICE_PER_SQFT")] 
-
-#statenisland_monthly_medsales$MEDIAN_SALE_PRICE <- aggregate(SALE_PRICE ~ SALE_YEAR_MONTH + ntaname, data = statenisland_monthly_medsales, FUN = median)
-
-statenisland_monthly_medsales <- statenisland_monthly_medsales %>% 
-  group_by(ntaname, SALE_YEAR_MONTH) %>%
-  summarise(MEDIAN_SALE_PRICE = median(SALE_PRICE),
-            MEDIAN_PRICE_PER_SQFT = median(PRICE_PER_SQFT),
-            MAX_SALE_PRICE = max(SALE_PRICE),
-            MIN_SALE_PRICE = min(SALE_PRICE)
-  )
-
-
-
 
 
 ####Plotting choropleth using plotly
